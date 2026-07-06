@@ -2,10 +2,10 @@
 Agent 4 - Scheduler (plain code, no LLM).
 
 Responsibility: deterministically map subtopics onto calendar dates based on
-hours_per_day and an optional deadline. The schedule is spread across the
-available study window so the work fits naturally within the requested pace.
+hours_per_day and an optional deadline. The schedule spreads work across the
+available study window so that each day gets at most one planned subtopic,
+while still allowing very long subtopics to spill to the next day when needed.
 """
-import math
 from datetime import date, timedelta
 
 
@@ -23,40 +23,29 @@ def build_schedule(
     daily_budget_minutes = max(1, int(hours_per_day * 60))
 
     if deadline is None:
-        deadline = start_date + timedelta(days=6)
+        deadline = start_date + timedelta(days=max(6, len(subtopics_flat) - 1))
 
     available_days = max(1, (deadline - start_date).days + 1)
-    total_minutes = sum(int(item["est_minutes"]) for item in subtopics_flat)
-    required_daily_minutes = max(1, math.ceil(total_minutes / available_days))
-    effective_daily_budget = max(daily_budget_minutes, required_daily_minutes)
+    effective_days = max(available_days, len(subtopics_flat))
 
     schedule: list[dict] = []
     current_day_offset = 0
-    minutes_used_today = 0
 
     for item in subtopics_flat:
         est = int(item["est_minutes"])
 
-        if est > effective_daily_budget:
-            if minutes_used_today > 0:
-                current_day_offset += 1
-                minutes_used_today = 0
+        if est > daily_budget_minutes:
             schedule.append({
                 "subtopic_id": item["subtopic_id"],
                 "scheduled_date": start_date + timedelta(days=current_day_offset),
             })
             current_day_offset += 1
-            minutes_used_today = 0
             continue
-
-        if minutes_used_today + est > effective_daily_budget:
-            current_day_offset += 1
-            minutes_used_today = 0
 
         schedule.append({
             "subtopic_id": item["subtopic_id"],
-            "scheduled_date": start_date + timedelta(days=current_day_offset),
+            "scheduled_date": start_date + timedelta(days=min(current_day_offset, effective_days - 1)),
         })
-        minutes_used_today += est
+        current_day_offset += 1
 
     return schedule
