@@ -8,6 +8,13 @@ from app.auth import get_current_user
 router = APIRouter(prefix="/quizzes", tags=["quizzes"])
 
 
+def _get_owned_schedule_event(quiz: models.Quiz, user: models.User):
+    for event in quiz.subtopic.schedule_events:
+        if getattr(event.plan, "user_id", None) == user.id:
+            return event
+    return None
+
+
 @router.get("/{quiz_id}", response_model=schemas.QuizOut)
 def get_quiz(
     quiz_id: int,
@@ -65,12 +72,7 @@ def submit_quiz(
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
 
-    # Ownership check: the subtopic's schedule event's plan must belong to this user
-    owned_event = None
-    for event in quiz.subtopic.schedule_events:
-        if event.plan.user_id == current_user.id:
-            owned_event = event
-            break
+    owned_event = _get_owned_schedule_event(quiz, current_user)
     if owned_event is None:
         raise HTTPException(status_code=403, detail="Not authorized for this quiz")
 
