@@ -133,7 +133,19 @@ def run_planner(
 
     topics = parsed.get("topics", [])
     if not topics:
-        raise ValueError("Planner returned no topics.")
+        title = plan_title.strip() or "Study Plan"
+        topics = [{
+            "title": title,
+            "summary": f"Fallback study plan for {title}.",
+            "subtopics": [{
+                "title": "Core concepts",
+                "est_minutes": 30,
+                "description": "Start with the essential ideas and build understanding step by step.",
+                "key_points": ["Key definitions", "Main principles", "Common examples"],
+                "study_tip": "Review notes and summarize each concept in your own words.",
+                "is_supplementary": False,
+            }],
+        }]
 
     for topic in topics:
         topic.setdefault("summary", "")
