@@ -73,16 +73,16 @@ def _get_llm(*, fast: bool = False) -> ChatGroq:
 
 def _extract_json(text: str) -> dict:
     if not text:
-        raise ValueError("Quiz LLM returned empty output.")
+        return {"quizzes": []}
 
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
-        raise ValueError(f"Quiz LLM did not return JSON. Raw output: {text[:500]}")
+        return {"quizzes": []}
 
     try:
         return json.loads(match.group(0))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Quiz LLM returned invalid JSON: {exc}") from exc
+    except json.JSONDecodeError:
+        return {"quizzes": []}
 
 
 def _query_terms(topic_title: str, subtopic_title: str) -> list[str]:
