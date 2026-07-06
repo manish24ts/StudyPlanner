@@ -2,9 +2,10 @@
 Agent 4 - Scheduler (plain code, no LLM).
 
 Responsibility: deterministically map subtopics onto calendar dates based on
-hours_per_day and an optional deadline. Greedy bin-packing by day: fill each
-day up to the hours_per_day budget, spill remainder into the next day.
+hours_per_day and an optional deadline. The schedule is spread across the
+available study window so the work fits naturally within the requested pace.
 """
+import math
 from datetime import date, timedelta
 
 
@@ -21,15 +22,22 @@ def build_schedule(
     start_date = start_date or date.today()
     daily_budget_minutes = max(1, int(hours_per_day * 60))
 
+    if deadline is None:
+        deadline = start_date + timedelta(days=6)
+
+    available_days = max(1, (deadline - start_date).days + 1)
+    total_minutes = sum(int(item["est_minutes"]) for item in subtopics_flat)
+    required_daily_minutes = max(1, math.ceil(total_minutes / available_days))
+    effective_daily_budget = max(daily_budget_minutes, required_daily_minutes)
+
     schedule: list[dict] = []
     current_day_offset = 0
     minutes_used_today = 0
 
     for item in subtopics_flat:
-        est = item["est_minutes"]
+        est = int(item["est_minutes"])
 
-        # If this subtopic alone exceeds the daily budget, give it its own day.
-        if est > daily_budget_minutes:
+        if est > effective_daily_budget:
             if minutes_used_today > 0:
                 current_day_offset += 1
                 minutes_used_today = 0
@@ -41,7 +49,7 @@ def build_schedule(
             minutes_used_today = 0
             continue
 
-        if minutes_used_today + est > daily_budget_minutes:
+        if minutes_used_today + est > effective_daily_budget:
             current_day_offset += 1
             minutes_used_today = 0
 
@@ -50,18 +58,5 @@ def build_schedule(
             "scheduled_date": start_date + timedelta(days=current_day_offset),
         })
         minutes_used_today += est
-
-    # If a deadline was given and we overshot it, compress by increasing the
-    # effective daily budget proportionally (simple, transparent strategy —
-    # no LLM "judgment" involved, just re-run with a larger budget).
-    if deadline:
-        last_date = schedule[-1]["scheduled_date"] if schedule else start_date
-        available_days = (deadline - start_date).days + 1
-        used_days = (last_date - start_date).days + 1
-        if used_days > available_days > 0:
-            scale = used_days / available_days
-            new_hours_per_day = hours_per_day * scale
-            return build_schedule(subtopics_flat, new_hours_per_day, deadline=None,
-                                   start_date=start_date)
 
     return schedule
