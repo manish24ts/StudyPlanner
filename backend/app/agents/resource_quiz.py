@@ -274,6 +274,19 @@ def _fallback_questions(subtopic_title: str) -> list[dict]:
     }] * 3
 
 
+def fallback_resources_for_subtopic(topic_title: str, subtopic_title: str) -> tuple[str | None, list[dict]]:
+    fallback_blog = {
+        "title": f"{subtopic_title} guide",
+        "url": f"https://www.google.com/search?q={subtopic_title.replace(' ', '+')}+{topic_title.replace(' ', '+')}",
+    }
+    fallback_video = {
+        "url": f"https://www.youtube.com/results?search_query={subtopic_title.replace(' ', '+')}+{topic_title.replace(' ', '+')}",
+        "title": f"{subtopic_title} tutorial",
+        "channel": "YouTube search",
+    }
+    return fallback_video["url"], [fallback_blog]
+
+
 def generate_quizzes_batch(subtopics: list[tuple[str, str]]) -> dict[str, list[dict]]:
     if not subtopics:
         return {}
@@ -339,6 +352,19 @@ def enrich_topics(topics: list[dict]) -> list[dict]:
             sub_title, youtube, blogs = fut.result()
             youtube_map[sub_title] = youtube
             blogs_map[sub_title] = blogs
+
+    for topic_title, sub_title in all_pairs:
+        if sub_title not in youtube_map or youtube_map[sub_title] is None:
+            youtube_url, fallback_blogs = fallback_resources_for_subtopic(topic_title, sub_title)
+            youtube_map[sub_title] = {
+                "url": youtube_url,
+                "title": f"{sub_title} tutorial",
+                "channel": "YouTube search",
+            } if youtube_url else None
+            blogs_map[sub_title] = fallback_blogs if fallback_blogs else blogs_map.get(sub_title, [])
+        if sub_title not in blogs_map or not blogs_map[sub_title]:
+            _, fallback_blogs = fallback_resources_for_subtopic(topic_title, sub_title)
+            blogs_map[sub_title] = fallback_blogs
 
     enriched_topics = []
     for topic in topics:
