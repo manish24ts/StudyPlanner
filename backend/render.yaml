@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     region: oregon
-    buildCommand: "pip install -r backend/requirements.txt && alembic/alembic upgrade head"
+    buildCommand: "pip install -r backend/requirements.txt && backend/alembic upgrade head"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
