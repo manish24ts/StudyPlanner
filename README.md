@@ -84,12 +84,13 @@ without it.
 3. Fill in `DATABASE_URL`, `GROQ_API_KEY`, `YOUTUBE_API_KEY`, and `CORS_ORIGINS`
    in the Render dashboard (`CORS_ORIGINS` = your Vercel frontend URL, e.g.
    `https://your-app.vercel.app`).
-4. Render uses **Python 3.12** (`backend/runtime.txt`) so dependencies install
-   from pre-built wheels — do not remove `runtime.txt` or Render may default to
-   Python 3.14 and fail building `pydantic-core`.
-5. Render runs `pip install -r requirements.txt && alembic upgrade head` on
+4. Render uses **Python 3.12** via `.python-version` (Render ignores Heroku's
+   `runtime.txt`). If the build log still shows Python 3.14, set environment
+   variable `PYTHON_VERSION` = `3.12.8` in the Render dashboard.
+5. Set Render **Root Directory** to `backend` (Settings → Build & Deploy).
+6. Render runs `pip install -r requirements.txt && alembic upgrade head` on
    every deploy, so migrations apply automatically.
-6. Your API will be live at `https://<your-service-name>.onrender.com`.
+7. Your API will be live at `https://<your-service-name>.onrender.com`.
 
 Note: Render's free tier spins down after inactivity — the first request
 after idling takes ~30-50s to wake up. That's expected, not a bug.
