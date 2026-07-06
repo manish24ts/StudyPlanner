@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adaptive Study Planner</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-mark">ASP</span>
+      <div>
+        <h1>Adaptive Study Planner</h1>
+        <p class="brand-tagline">Paste notes · get a calendar · learn with quizzes</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="user-email hidden" id="user-email-label"></span>
+      <button class="btn btn-ghost btn-sm hidden" id="btn-logout">Log out</button>
+    </div>
+  </div>
+
+  <!-- ===================== AUTH SCREEN ===================== -->
+  <div id="screen-auth">
+    <div class="auth-hero">
+      <h2>Your personal study coach</h2>
+      <p>Turn messy notes into a day-by-day plan with videos, key concepts, and quizzes that adapt as you learn.</p>
+    </div>
+    <div class="card card-glow">
+      <div class="auth-toggle">
+        <button id="tab-login" class="active">Log in</button>
+        <button id="tab-signup">Sign up</button>
+      </div>
+
+      <form id="form-auth">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="auth-email" required placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="auth-password" required minlength="6" placeholder="At least 6 characters">
+        </div>
+        <button type="submit" class="btn btn-lg" id="btn-auth-submit" style="width:100%; justify-content:center;">
+          <span id="auth-submit-label">Log in</span>
+        </button>
+        <div class="error-msg hidden" id="auth-error"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD SCREEN ===================== -->
+  <div id="screen-dashboard" class="hidden">
+
+    <section class="hero">
+      <div class="hero-content">
+        <span class="eyebrow">Smart planning</span>
+        <h2>Build a study calendar in minutes</h2>
+        <p>Paste your syllabus or chapter notes. We break it into topics, enrich it with web research, attach video lessons, and schedule everything around your deadline.</p>
+        <ul class="hero-features">
+          <li>Web-researched supplementary topics</li>
+          <li>Key points &amp; study tips per lesson</li>
+          <li>YouTube resources + mastery quizzes</li>
+        </ul>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-card-preview">
+          <div class="preview-day"><span>Mon</span><strong>SQL Joins</strong><em>45m</em></div>
+          <div class="preview-day done"><span>Tue</span><strong>Normalization</strong><em>✓</em></div>
+          <div class="preview-day"><span>Wed</span><strong>Indexing</strong><em>30m</em></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="card card-glow">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">New plan</span>
+          <h2>Paste your study material</h2>
+        </div>
+      </div>
+
+      <form id="form-plan">
+        <div class="field">
+          <label>Plan title</label>
+          <input type="text" id="plan-title" required placeholder="e.g. DBMS Midterm · Linear Algebra · AWS SAA">
+        </div>
+        <div class="field">
+          <label>Study content</label>
+          <textarea id="plan-content" required placeholder="Paste your chapter, notes, or syllabus here. The more detail you provide, the richer your plan will be..."></textarea>
+          <span class="field-hint" id="content-char-count">0 characters</span>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Hours per day</label>
+            <input type="number" id="plan-hours" min="0.5" max="16" step="0.5" value="2" required>
+          </div>
+          <div class="field">
+            <label>Deadline (optional)</label>
+            <input type="date" id="plan-deadline">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-lg" id="btn-plan-submit">
+          <span id="plan-submit-label">Generate study calendar</span>
+        </button>
+        <div class="error-msg hidden" id="plan-error"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">Your plans</span>
+          <h2>Study calendars</h2>
+        </div>
+      </div>
+      <div id="plan-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ===================== CALENDAR SCREEN ===================== -->
+  <div id="screen-calendar" class="hidden">
+    <button class="btn btn-ghost btn-sm" id="btn-back-dashboard">&larr; All plans</button>
+
+    <div class="calendar-header mt-24">
+      <div>
+        <span class="eyebrow">Your plan</span>
+        <h2 id="calendar-plan-title">&nbsp;</h2>
+        <p class="calendar-meta" id="calendar-meta"></p>
+      </div>
+      <div class="progress-block">
+        <span class="mono text-dim" id="calendar-progress-label">0/0 done</span>
+        <div class="progress-track progress-track-lg">
+          <div class="progress-fill" id="calendar-progress-fill" style="width:0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid" id="calendar-stats"></div>
+
+    <div class="card mt-24">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">Syllabus</span>
+          <h2>Topic overview</h2>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="btn-toggle-syllabus">Collapse</button>
+      </div>
+      <div id="syllabus-overview"></div>
+    </div>
+
+    <div class="card mt-24">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">Schedule</span>
+          <h2>Daily study ledger</h2>
+        </div>
+      </div>
+      <div class="ledger" id="ledger"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===================== LOADING OVERLAY ===================== -->
+<div class="loading-overlay hidden" id="loading-overlay">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <h3 id="loading-title">Building your study plan</h3>
+    <p class="text-dim" id="loading-subtitle">This usually takes 30–90 seconds</p>
+    <ul class="loading-steps" id="loading-steps">
+      <li class="active" data-step="prep">Analyzing content &amp; web research</li>
+      <li data-step="planner">Designing curriculum</li>
+      <li data-step="resources">Finding videos &amp; quizzes</li>
+      <li data-step="schedule">Scheduling your calendar</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== QUIZ MODAL ===================== -->
+<div class="modal-backdrop hidden" id="quiz-modal-backdrop">
+  <div class="modal">
+    <div class="card-header">
+      <div>
+        <span class="eyebrow">Quiz</span>
+        <h2 id="quiz-title">&nbsp;</h2>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btn-quiz-close">Close</button>
+    </div>
+    <div id="quiz-body"></div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
