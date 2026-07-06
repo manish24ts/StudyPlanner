@@ -81,16 +81,16 @@ def _get_llm() -> ChatGroq:
 
 def _extract_json(text: str) -> dict:
     if not text:
-        raise ValueError("Planner LLM returned empty output.")
+        return {"topics": []}
 
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
-        raise ValueError(f"Planner LLM did not return JSON. Raw output: {text[:500]}")
+        return {"topics": []}
 
     try:
         return json.loads(match.group(0))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Planner LLM returned invalid JSON: {exc}") from exc
+    except json.JSONDecodeError:
+        return {"topics": []}
 
 
 def _is_sparse(text: str) -> bool:
