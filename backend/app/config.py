@@ -42,7 +42,10 @@ class Settings(BaseSettings):
     YOUTUBE_API_KEY: str = ""
 
     # CORS
-    CORS_ORIGINS: str = "*"
+    CORS_ORIGINS: str = (
+        "https://study-planner-khaki-rho.vercel.app,"
+        "http://localhost:5500,http://127.0.0.1:5500"
+    )
 
     @property
     def cors_origin_list(self) -> list[str]:
