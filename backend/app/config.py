@@ -7,7 +7,7 @@ def validate_database_url(url: str) -> None:
     """Raise a helpful error when .env still has the example placeholder."""
     parsed = urlparse(url)
     hostname = (parsed.hostname or "").lower()
-    if hostname in {"host", "your-neon-host.neon.tech", "dbname"}:
+    if hostname in {"host", "your-neon-host.neon.tech", "dbname", "your-neon-host"}:
         raise RuntimeError(
             "DATABASE_URL is still a placeholder in backend/.env.\n"
             "Set up a free Postgres database and paste the real connection string:\n"

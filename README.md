@@ -79,12 +79,17 @@ without it.
 
 1. Push this repo to GitHub.
 2. In [Render](https://render.com), "New +" → "Blueprint", point it at your repo.
-   It will read `backend/render.yaml` automatically and provision a free web service.
-3. Fill in `DATABASE_URL`, `GROQ_API_KEY`, `YOUTUBE_API_KEY` in the Render dashboard
-   (these are marked `sync: false` in `render.yaml` so Render will prompt for them).
-4. Render runs `pip install -r requirements.txt && alembic upgrade head` on
+   It will read `render.yaml` at the repo root (or `backend/render.yaml` if you set
+   the service root directory to `backend`).
+3. Fill in `DATABASE_URL`, `GROQ_API_KEY`, `YOUTUBE_API_KEY`, and `CORS_ORIGINS`
+   in the Render dashboard (`CORS_ORIGINS` = your Vercel frontend URL, e.g.
+   `https://your-app.vercel.app`).
+4. Render uses **Python 3.12** (`backend/runtime.txt`) so dependencies install
+   from pre-built wheels — do not remove `runtime.txt` or Render may default to
+   Python 3.14 and fail building `pydantic-core`.
+5. Render runs `pip install -r requirements.txt && alembic upgrade head` on
    every deploy, so migrations apply automatically.
-5. Your API will be live at `https://<your-service-name>.onrender.com`.
+6. Your API will be live at `https://<your-service-name>.onrender.com`.
 
 Note: Render's free tier spins down after inactivity — the first request
 after idling takes ~30-50s to wake up. That's expected, not a bug.
@@ -96,15 +101,19 @@ two for a single Postgres database — create a project, copy the pooled
 connection string (it includes `?sslmode=require`), paste it into
 `DATABASE_URL`.
 
-### Frontend → Netlify, Vercel, GitHub Pages, or Render Static Site
+### Frontend → Vercel (recommended), Netlify, or any static host
 
-Any static host works since there's no build step. Simplest path:
+No bundler — plain HTML/CSS/JS. For **Vercel**:
 
-1. Edit `frontend/js/config.js` and set `API_BASE_URL` to your Render backend URL.
-2. Drag-and-drop the `frontend/` folder into [Netlify Drop](https://app.netlify.com/drop),
-   or connect the repo and set the publish directory to `frontend/`.
+1. Import the repo in [Vercel](https://vercel.com) and set **Root Directory** to `frontend`.
+2. Add environment variable `API_BASE_URL` = your Render backend URL
+   (e.g. `https://adaptive-study-planner-api.onrender.com`, no trailing slash).
+3. Deploy. Vercel runs `frontend/build.sh`, which writes `js/config.js` from that URL.
+4. Set the same URL's frontend origin in Render as `CORS_ORIGINS`
+   (e.g. `https://your-app.vercel.app`).
 
-That's the whole thing running for $0/month.
+For other static hosts, edit `frontend/js/config.js` and set `API_BASE_URL` manually,
+then publish the `frontend/` folder.
 
 ## 4. API reference
 
