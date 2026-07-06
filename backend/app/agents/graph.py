@@ -44,10 +44,17 @@ def prep_node(state: PipelineState) -> PipelineState:
 
 
 def planner_node(state: PipelineState) -> PipelineState:
+    deadline = state.get("deadline")
+    start_date = date.today()
+    target_subtopics = 7
+    if deadline is not None:
+        target_subtopics = max(7, (deadline - start_date).days + 1)
+
     topics = run_planner(
         state["chunks"],
         web_hints=state.get("web_hints"),
         plan_title=state.get("plan_title", ""),
+        target_subtopics=target_subtopics,
     )
     return {"topics": topics}
 

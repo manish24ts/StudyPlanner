@@ -98,11 +98,70 @@ def _is_sparse(text: str) -> bool:
     return len(words) < 80
 
 
+def _build_fallback_topics(plan_title: str, target_subtopics: int) -> list[dict]:
+    title = plan_title.strip() or "Study Plan"
+    subtopic_titles = [
+        "Foundations",
+        "Core concepts",
+        "Methods and techniques",
+        "Applications",
+        "Practice problems",
+        "Common mistakes",
+        "Review and revision",
+    ]
+    if target_subtopics > len(subtopic_titles):
+        subtopic_titles.extend([f"Module {i}" for i in range(len(subtopic_titles) + 1, target_subtopics + 1)])
+
+    subtopics = []
+    for idx, sub_title in enumerate(subtopic_titles[:max(1, target_subtopics)]):
+        subtopics.append({
+            "title": sub_title,
+            "est_minutes": 30 + (idx % 3) * 15,
+            "description": f"Build understanding of {title.lower()} through a structured step-by-step lesson.",
+            "key_points": ["Key definitions", "Main principles", "Common examples"],
+            "study_tip": "Review notes and summarize each concept in your own words.",
+            "is_supplementary": False,
+        })
+
+    return [{
+        "title": title,
+        "summary": f"Fallback study plan for {title}.",
+        "subtopics": subtopics,
+    }]
+
+
+def _ensure_minimum_subtopics(topics: list[dict], target_subtopics: int) -> list[dict]:
+    if target_subtopics <= 0:
+        return topics
+
+    total_subtopics = sum(len(topic.get("subtopics", [])) for topic in topics)
+    if total_subtopics >= target_subtopics:
+        return topics
+
+    if not topics:
+        return _build_fallback_topics("Study Plan", target_subtopics)
+
+    while total_subtopics < target_subtopics:
+        topic = topics[-1]
+        topic.setdefault("subtopics", []).append({
+            "title": f"Practice set {total_subtopics + 1}",
+            "est_minutes": 30,
+            "description": "Reinforce the topic with guided practice and review.",
+            "key_points": ["Practice", "Review", "Reflection"],
+            "study_tip": "Work through a few examples and summarize what you learned.",
+            "is_supplementary": False,
+        })
+        total_subtopics += 1
+
+    return topics
+
+
 def run_planner(
     chunks: list[str],
     *,
     web_hints: list[dict] | None = None,
     plan_title: str = "",
+    target_subtopics: int | None = None,
 ) -> list[dict]:
     llm = _get_llm()
     combined_text = "\n\n---\n\n".join(chunks)
@@ -134,18 +193,10 @@ def run_planner(
     topics = parsed.get("topics", [])
     if not topics:
         title = plan_title.strip() or "Study Plan"
-        topics = [{
-            "title": title,
-            "summary": f"Fallback study plan for {title}.",
-            "subtopics": [{
-                "title": "Core concepts",
-                "est_minutes": 30,
-                "description": "Start with the essential ideas and build understanding step by step.",
-                "key_points": ["Key definitions", "Main principles", "Common examples"],
-                "study_tip": "Review notes and summarize each concept in your own words.",
-                "is_supplementary": False,
-            }],
-        }]
+        target = max(5, int(target_subtopics or 5))
+        topics = _build_fallback_topics(title, target)
+
+    topics = _ensure_minimum_subtopics(topics, max(5, int(target_subtopics or 5)))
 
     for topic in topics:
         topic.setdefault("summary", "")
