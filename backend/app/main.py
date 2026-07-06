@@ -11,12 +11,14 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Browsers reject allow_credentials=True with allow_origins=["*"].
-_cors_allow_all = settings.cors_origin_list == ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
-    allow_credentials=not _cors_allow_all,
+    allow_origins=[
+        "https://study-planner-khaki-rho.vercel.app",
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
